@@ -79,6 +79,9 @@ source .venv/bin/activate
 
 # Instalar dependencias
 pip install -r requirements.txt
+
+# Ejecuta el servidor:
+uvicorn main:app --reload
 ```
 
 ### Paso 3: Configurar variables de entorno del Backend
