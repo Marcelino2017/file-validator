@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: file-validator-frontend
+    ports:
+      - "9090:80"
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: file-validator-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: proyecto_senior
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: file-validator-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://root:root@db:3306/proyecto_senior?charset=utf8mb4
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 60
+      UPLOAD_DIR: /app/uploaded_files
+      CORS_ORIGINS: http://localhost:9090,http://localhost:5173
+    volumes:
+      - uploads_data:/app/uploaded_files
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+  uploads_data:
+
