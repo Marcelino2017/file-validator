@@ -11,13 +11,14 @@ El sistema verifica que los PDFs subidos contengan la cedula del usuario autenti
 1. [Requisitos Previos](#requisitos-previos)
 2. [Clonar y Configurar el Proyecto](#clonar-y-configurar-el-proyecto)
 3. [Ejecutar el Proyecto](#ejecutar-el-proyecto)
-4. [Estructura del Proyecto](#estructura-del-proyecto)
-5. [Arquitectura del Backend](#arquitectura-del-backend)
-6. [Pipeline de Validacion de PDF (5 Capas)](#pipeline-de-validacion-de-pdf-5-capas)
-7. [Endpoints de la API](#endpoints-de-la-api)
-8. [Arquitectura del Frontend](#arquitectura-del-frontend)
-9. [Funciones y Clases Creadas](#funciones-y-clases-creadas)
-10. [Flujo Principal de la Aplicacion](#flujo-principal-de-la-aplicacion)
+4. [Ejecutar con Docker](#ejecutar-con-docker)
+5. [Estructura del Proyecto](#estructura-del-proyecto)
+6. [Arquitectura del Backend](#arquitectura-del-backend)
+7. [Pipeline de Validacion de PDF (5 Capas)](#pipeline-de-validacion-de-pdf-5-capas)
+8. [Endpoints de la API](#endpoints-de-la-api)
+9. [Arquitectura del Frontend](#arquitectura-del-frontend)
+10. [Funciones y Clases Creadas](#funciones-y-clases-creadas)
+11. [Flujo Principal de la Aplicacion](#flujo-principal-de-la-aplicacion)
 
 ---
 
@@ -25,12 +26,12 @@ El sistema verifica que los PDFs subidos contengan la cedula del usuario autenti
 
 Antes de clonar el proyecto, asegurate de tener instalado:
 
-| Herramienta | Version minima | Proposito |
-|-------------|---------------|-----------|
-| **Python** | 3.10+ | Backend (FastAPI) |
-| **Node.js** | 18+ | Frontend (React + Vite) |
-| **MySQL** | 8.0+ | Base de datos relacional |
-| **Tesseract OCR** | 5.0+ | Reconocimiento optico de caracteres para PDFs escaneados |
+| Herramienta       | Version minima | Proposito                                                |
+| ----------------- | -------------- | -------------------------------------------------------- |
+| **Python**        | 3.10+          | Backend (FastAPI)                                        |
+| **Node.js**       | 18+            | Frontend (React + Vite)                                  |
+| **MySQL**         | 8.0+           | Base de datos relacional                                 |
+| **Tesseract OCR** | 5.0+           | Reconocimiento optico de caracteres para PDFs escaneados |
 
 ### Instalar Tesseract OCR (Windows)
 
@@ -103,14 +104,14 @@ UPLOAD_DIR=uploaded_files
 CORS_ORIGINS=http://localhost:5173
 ```
 
-| Variable | Descripcion |
-|----------|-------------|
-| `DATABASE_URL` | Cadena de conexion a MySQL (usuario, contraseña, host, puerto, nombre de BD) |
-| `JWT_SECRET_KEY` | Clave secreta para firmar tokens JWT (cambiar en produccion) |
-| `JWT_ALGORITHM` | Algoritmo de cifrado del JWT (HS256 por defecto) |
-| `JWT_EXPIRE_MINUTES` | Tiempo de expiracion del token en minutos |
-| `UPLOAD_DIR` | Directorio donde se almacenan los PDFs subidos |
-| `CORS_ORIGINS` | Origenes permitidos para peticiones CORS (URL del frontend) |
+| Variable             | Descripcion                                                                  |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`       | Cadena de conexion a MySQL (usuario, contraseña, host, puerto, nombre de BD) |
+| `JWT_SECRET_KEY`     | Clave secreta para firmar tokens JWT (cambiar en produccion)                 |
+| `JWT_ALGORITHM`      | Algoritmo de cifrado del JWT (HS256 por defecto)                             |
+| `JWT_EXPIRE_MINUTES` | Tiempo de expiracion del token en minutos                                    |
+| `UPLOAD_DIR`         | Directorio donde se almacenan los PDFs subidos                               |
+| `CORS_ORIGINS`       | Origenes permitidos para peticiones CORS (URL del frontend)                  |
 
 ### Paso 4: Configurar el Frontend
 
@@ -321,37 +322,37 @@ PDF subido por el usuario
 
 Cada imagen pasa por 5 versiones de preprocesamiento para maximizar la precision del OCR:
 
-| Version | Tecnica | Proposito |
-|---------|---------|-----------|
-| 1 | Escala de grises (sin procesar) | Imagen original en gris |
-| 2 | GaussianBlur (3x3) | Reduccion de ruido |
-| 3 | Otsu Threshold | Binarizacion automatica por histograma |
-| 4 | Adaptive Threshold Gaussian | Binarizacion adaptativa por region |
-| 5 | Bilateral Filter + Otsu | Suavizado preservando bordes + binarizacion |
+| Version | Tecnica                         | Proposito                                   |
+| ------- | ------------------------------- | ------------------------------------------- |
+| 1       | Escala de grises (sin procesar) | Imagen original en gris                     |
+| 2       | GaussianBlur (3x3)              | Reduccion de ruido                          |
+| 3       | Otsu Threshold                  | Binarizacion automatica por histograma      |
+| 4       | Adaptive Threshold Gaussian     | Binarizacion adaptativa por region          |
+| 5       | Bilateral Filter + Otsu         | Suavizado preservando bordes + binarizacion |
 
 ### Deteccion flexible de cedula
 
 El sistema busca la cedula en multiples formatos:
 
-| Formato | Ejemplo | Fuente tipica |
-|---------|---------|---------------|
-| Digitos puros | `1083005305` | Texto digital |
-| Con puntos | `1.083.005.305` | Documentos formales |
-| Con guiones | `1-083-005-305` | Formularios |
-| Con prefijo CC | `C.C. No. 1.083.005.305` | Certificados |
-| Con espacios | `1 083 005 305` | OCR con separadores |
+| Formato        | Ejemplo                  | Fuente tipica       |
+| -------------- | ------------------------ | ------------------- |
+| Digitos puros  | `1083005305`             | Texto digital       |
+| Con puntos     | `1.083.005.305`          | Documentos formales |
+| Con guiones    | `1-083-005-305`          | Formularios         |
+| Con prefijo CC | `C.C. No. 1.083.005.305` | Certificados        |
+| Con espacios   | `1 083 005 305`          | OCR con separadores |
 
 Ademas, para texto extraido por OCR se aplica normalizacion de caracteres comunes que Tesseract confunde:
 
 | Caracter OCR | Se interpreta como |
-|-------------|-------------------|
-| O, o, Q, D | 0 |
-| I, l, L, \| | 1 |
-| Z, z | 2 |
-| S, s, $ | 5 |
-| G | 6 |
-| B | 8 |
-| g | 9 |
+| ------------ | ------------------ |
+| O, o, Q, D   | 0                  |
+| I, l, L, \|  | 1                  |
+| Z, z         | 2                  |
+| S, s, $      | 5                  |
+| G            | 6                  |
+| B            | 8                  |
+| g            | 9                  |
 
 ---
 
@@ -361,11 +362,11 @@ Base URL: `http://localhost:8000/api/v1`
 
 ### Autenticacion
 
-| Metodo | Ruta | Descripcion | Autenticacion |
-|--------|------|-------------|---------------|
-| `POST` | `/auth/register` | Registro de usuario con empresa | No |
-| `POST` | `/auth/login` | Login por cedula + contraseña → JWT | No |
-| `GET` | `/auth/me` | Perfil del usuario autenticado | Si (Bearer Token) |
+| Metodo | Ruta             | Descripcion                         | Autenticacion     |
+| ------ | ---------------- | ----------------------------------- | ----------------- |
+| `POST` | `/auth/register` | Registro de usuario con empresa     | No                |
+| `POST` | `/auth/login`    | Login por cedula + contraseña → JWT | No                |
+| `GET`  | `/auth/me`       | Perfil del usuario autenticado      | Si (Bearer Token) |
 
 #### POST /auth/register
 
@@ -430,8 +431,8 @@ Respuesta `200 OK`:
 
 ### Documentos
 
-| Metodo | Ruta | Descripcion | Autenticacion |
-|--------|------|-------------|---------------|
+| Metodo | Ruta                    | Descripcion                | Autenticacion     |
+| ------ | ----------------------- | -------------------------- | ----------------- |
 | `POST` | `/documents/upload-pdf` | Subida y validacion de PDF | Si (Bearer Token) |
 
 #### POST /documents/upload-pdf
@@ -441,6 +442,7 @@ Header: `Authorization: Bearer <token>`
 Campo: `file` (archivo PDF)
 
 Validaciones realizadas:
+
 1. Extension del archivo es `.pdf`
 2. Tipo MIME es `application/pdf`
 3. Cabecera binaria empieza con `%PDF`
@@ -481,14 +483,14 @@ Respuesta `201 Created`:
 
 ### Tecnologias del Frontend
 
-| Libreria | Version | Proposito |
-|----------|---------|-----------|
-| React | 18.3 | Libreria de UI |
-| React Router DOM | 7.2 | Navegacion SPA |
-| React Hook Form | 7.54 | Manejo de formularios |
-| Axios | 1.8 | Cliente HTTP |
-| Tailwind CSS | 3.4 | Estilos utilitarios |
-| Vite | 6.2 | Bundler y dev server |
+| Libreria         | Version | Proposito             |
+| ---------------- | ------- | --------------------- |
+| React            | 18.3    | Libreria de UI        |
+| React Router DOM | 7.2     | Navegacion SPA        |
+| React Hook Form  | 7.54    | Manejo de formularios |
+| Axios            | 1.8     | Cliente HTTP          |
+| Tailwind CSS     | 3.4     | Estilos utilitarios   |
+| Vite             | 6.2     | Bundler y dev server  |
 
 ---
 
@@ -496,127 +498,127 @@ Respuesta `201 Created`:
 
 ### Capa de Dominio (`domain/`)
 
-| Archivo | Clase/Funcion | Descripcion |
-|---------|---------------|-------------|
-| `entities.py` | `Enterprise` | Dataclass de empresa (name, nit) |
-| `entities.py` | `User` | Dataclass de usuario (first_name, last_name, cedula, hashed_password, enterprise_id) |
-| `entities.py` | `Profile` | Dataclass de perfil (user_id, enterprise_name, nit) |
-| `entities.py` | `PDFDocument` | Dataclass de documento PDF (filename, mime_type, storage_path, sha256, user_id, enterprise_id) |
-| `interfaces.py` | `EnterpriseRepository` | Puerto abstracto: get_by_nit(), create() |
-| `interfaces.py` | `UserRepository` | Puerto abstracto: get_by_cedula(), get_by_id(), create() |
-| `interfaces.py` | `PDFRepository` | Puerto abstracto: create() |
-| `interfaces.py` | `PasswordHasher` | Puerto abstracto: hash(), verify() |
-| `interfaces.py` | `TokenProvider` | Puerto abstracto: create_access_token(), get_subject() |
-| `interfaces.py` | `FileStorage` | Puerto abstracto: save() → (path, sha256) |
-| `interfaces.py` | `FileValidator` | Puerto abstracto: validate() |
-| `interfaces.py` | `FileValidatorFactory` | Puerto abstracto: for_file() |
+| Archivo         | Clase/Funcion          | Descripcion                                                                                    |
+| --------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `entities.py`   | `Enterprise`           | Dataclass de empresa (name, nit)                                                               |
+| `entities.py`   | `User`                 | Dataclass de usuario (first_name, last_name, cedula, hashed_password, enterprise_id)           |
+| `entities.py`   | `Profile`              | Dataclass de perfil (user_id, enterprise_name, nit)                                            |
+| `entities.py`   | `PDFDocument`          | Dataclass de documento PDF (filename, mime_type, storage_path, sha256, user_id, enterprise_id) |
+| `interfaces.py` | `EnterpriseRepository` | Puerto abstracto: get_by_nit(), create()                                                       |
+| `interfaces.py` | `UserRepository`       | Puerto abstracto: get_by_cedula(), get_by_id(), create()                                       |
+| `interfaces.py` | `PDFRepository`        | Puerto abstracto: create()                                                                     |
+| `interfaces.py` | `PasswordHasher`       | Puerto abstracto: hash(), verify()                                                             |
+| `interfaces.py` | `TokenProvider`        | Puerto abstracto: create_access_token(), get_subject()                                         |
+| `interfaces.py` | `FileStorage`          | Puerto abstracto: save() → (path, sha256)                                                      |
+| `interfaces.py` | `FileValidator`        | Puerto abstracto: validate()                                                                   |
+| `interfaces.py` | `FileValidatorFactory` | Puerto abstracto: for_file()                                                                   |
 
 ### Capa de Aplicacion (`application/`)
 
-| Archivo | Clase/Funcion | Descripcion |
-|---------|---------------|-------------|
-| `exceptions.py` | `ApplicationError` | Excepcion base |
-| `exceptions.py` | `ConflictError` | Conflicto (ej: cedula duplicada) |
-| `exceptions.py` | `NotFoundError` | Recurso no encontrado |
-| `exceptions.py` | `UnauthorizedError` | No autorizado |
-| `exceptions.py` | `ValidationError` | Error de validacion |
-| `auth_service.py` | `RegisterUserInput` | Dataclass de entrada para registro |
-| `auth_service.py` | `LoginInput` | Dataclass de entrada para login |
-| `auth_service.py` | `AuthResult` | Dataclass de resultado de autenticacion |
-| `auth_service.py` | `RegisterUser` | Caso de uso: registra usuario + empresa |
-| `auth_service.py` | `RegisterUser.execute()` | Valida cedula/NIT, verifica duplicados, crea empresa si no existe, hashea password, crea usuario |
-| `auth_service.py` | `LoginUser` | Caso de uso: autentica por cedula + password |
-| `auth_service.py` | `LoginUser.execute()` | Busca usuario por cedula, verifica password, genera JWT |
-| `pdf_service.py` | `ValidateAndUploadPDFInput` | Dataclass de entrada para subida de PDF |
-| `pdf_service.py` | `ValidateAndUploadPDF` | Caso de uso principal: valida y almacena PDF |
-| `pdf_service.py` | `.execute()` | Busca usuario, valida archivo, verifica cedula en PDF, guarda en disco, crea registro en BD |
-| `pdf_service.py` | `._pdf_contains_user_cedula()` | Orquesta las 5 capas de extraccion |
-| `pdf_service.py` | `._contains_cedula_variant()` | Busca cedula por digitos normalizados y por patron regex |
-| `pdf_service.py` | `._build_cedula_pattern()` | Construye regex que acepta separadores entre digitos |
-| `pdf_service.py` | `._normalize_digits()` | Extrae solo digitos de un texto |
-| `pdf_service.py` | `._normalize_ocr_text()` | Corrige caracteres que OCR confunde con digitos |
-| `pdf_service.py` | `._extract_text_pypdf()` | **Capa 1**: extraccion con pypdf |
-| `pdf_service.py` | `._extract_text_pdfplumber()` | **Capa 2**: extraccion con pdfplumber |
-| `pdf_service.py` | `._extract_text_fitz()` | **Capa 3**: extraccion con PyMuPDF (fitz) |
-| `pdf_service.py` | `._extract_text_from_embedded_images()` | **Capa 4**: OCR sobre imagenes individuales incrustadas en el PDF |
-| `pdf_service.py` | `._extract_text_ocr()` | **Capa 5**: OCR sobre pagina completa renderizada |
-| `pdf_service.py` | `._configure_tesseract()` | Configura ruta del ejecutable de Tesseract en Windows |
-| `pdf_service.py` | `._preprocess_for_ocr()` | Genera 5 versiones preprocesadas de cada imagen |
-| `pdf_service.py` | `._run_tesseract()` | Ejecuta Tesseract con 3 modos PSM y fallback de idioma |
+| Archivo           | Clase/Funcion                           | Descripcion                                                                                      |
+| ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `exceptions.py`   | `ApplicationError`                      | Excepcion base                                                                                   |
+| `exceptions.py`   | `ConflictError`                         | Conflicto (ej: cedula duplicada)                                                                 |
+| `exceptions.py`   | `NotFoundError`                         | Recurso no encontrado                                                                            |
+| `exceptions.py`   | `UnauthorizedError`                     | No autorizado                                                                                    |
+| `exceptions.py`   | `ValidationError`                       | Error de validacion                                                                              |
+| `auth_service.py` | `RegisterUserInput`                     | Dataclass de entrada para registro                                                               |
+| `auth_service.py` | `LoginInput`                            | Dataclass de entrada para login                                                                  |
+| `auth_service.py` | `AuthResult`                            | Dataclass de resultado de autenticacion                                                          |
+| `auth_service.py` | `RegisterUser`                          | Caso de uso: registra usuario + empresa                                                          |
+| `auth_service.py` | `RegisterUser.execute()`                | Valida cedula/NIT, verifica duplicados, crea empresa si no existe, hashea password, crea usuario |
+| `auth_service.py` | `LoginUser`                             | Caso de uso: autentica por cedula + password                                                     |
+| `auth_service.py` | `LoginUser.execute()`                   | Busca usuario por cedula, verifica password, genera JWT                                          |
+| `pdf_service.py`  | `ValidateAndUploadPDFInput`             | Dataclass de entrada para subida de PDF                                                          |
+| `pdf_service.py`  | `ValidateAndUploadPDF`                  | Caso de uso principal: valida y almacena PDF                                                     |
+| `pdf_service.py`  | `.execute()`                            | Busca usuario, valida archivo, verifica cedula en PDF, guarda en disco, crea registro en BD      |
+| `pdf_service.py`  | `._pdf_contains_user_cedula()`          | Orquesta las 5 capas de extraccion                                                               |
+| `pdf_service.py`  | `._contains_cedula_variant()`           | Busca cedula por digitos normalizados y por patron regex                                         |
+| `pdf_service.py`  | `._build_cedula_pattern()`              | Construye regex que acepta separadores entre digitos                                             |
+| `pdf_service.py`  | `._normalize_digits()`                  | Extrae solo digitos de un texto                                                                  |
+| `pdf_service.py`  | `._normalize_ocr_text()`                | Corrige caracteres que OCR confunde con digitos                                                  |
+| `pdf_service.py`  | `._extract_text_pypdf()`                | **Capa 1**: extraccion con pypdf                                                                 |
+| `pdf_service.py`  | `._extract_text_pdfplumber()`           | **Capa 2**: extraccion con pdfplumber                                                            |
+| `pdf_service.py`  | `._extract_text_fitz()`                 | **Capa 3**: extraccion con PyMuPDF (fitz)                                                        |
+| `pdf_service.py`  | `._extract_text_from_embedded_images()` | **Capa 4**: OCR sobre imagenes individuales incrustadas en el PDF                                |
+| `pdf_service.py`  | `._extract_text_ocr()`                  | **Capa 5**: OCR sobre pagina completa renderizada                                                |
+| `pdf_service.py`  | `._configure_tesseract()`               | Configura ruta del ejecutable de Tesseract en Windows                                            |
+| `pdf_service.py`  | `._preprocess_for_ocr()`                | Genera 5 versiones preprocesadas de cada imagen                                                  |
+| `pdf_service.py`  | `._run_tesseract()`                     | Ejecuta Tesseract con 3 modos PSM y fallback de idioma                                           |
 
 ### Capa de Infraestructura (`infrastructure/`)
 
-| Archivo | Clase/Funcion | Descripcion |
-|---------|---------------|-------------|
-| `database/base.py` | `Base` | Base declarativa de SQLAlchemy |
-| `database/session.py` | `engine` | Motor de conexion a MySQL |
-| `database/session.py` | `SessionLocal` | Fabrica de sesiones |
-| `database/session.py` | `get_db_session()` | Generador de sesiones para inyeccion de dependencias |
-| `database/models.py` | `EnterpriseModel` | Modelo ORM de la tabla `enterprises` |
-| `database/models.py` | `UserModel` | Modelo ORM de la tabla `users` (cedula unica, indexada) |
-| `database/models.py` | `PDFDocumentModel` | Modelo ORM de la tabla `pdf_documents` |
-| `database/repositories.py` | `SQLAlchemyEnterpriseRepository` | Implementacion concreta de EnterpriseRepository |
-| `database/repositories.py` | `SQLAlchemyUserRepository` | Implementacion concreta de UserRepository |
-| `database/repositories.py` | `SQLAlchemyPDFRepository` | Implementacion concreta de PDFRepository |
-| `security/jwt_provider.py` | `JoseJWTTokenProvider` | Implementacion de TokenProvider con python-jose |
-| `security/password.py` | `BcryptPasswordHasher` | Implementacion de PasswordHasher con pbkdf2_sha256 |
-| `storage/local_storage.py` | `LocalDiskStorage` | Implementacion de FileStorage (disco local, UUID como nombre) |
-| `storage/validators.py` | `PDFFileValidator` | Valida extension .pdf, MIME application/pdf, cabecera %PDF |
-| `storage/validators.py` | `UnsupportedFileValidator` | Rechaza formatos no soportados |
-| `storage/validators.py` | `SimpleFileValidatorFactory` | Fabrica que retorna el validador correcto segun el archivo |
+| Archivo                    | Clase/Funcion                    | Descripcion                                                   |
+| -------------------------- | -------------------------------- | ------------------------------------------------------------- |
+| `database/base.py`         | `Base`                           | Base declarativa de SQLAlchemy                                |
+| `database/session.py`      | `engine`                         | Motor de conexion a MySQL                                     |
+| `database/session.py`      | `SessionLocal`                   | Fabrica de sesiones                                           |
+| `database/session.py`      | `get_db_session()`               | Generador de sesiones para inyeccion de dependencias          |
+| `database/models.py`       | `EnterpriseModel`                | Modelo ORM de la tabla `enterprises`                          |
+| `database/models.py`       | `UserModel`                      | Modelo ORM de la tabla `users` (cedula unica, indexada)       |
+| `database/models.py`       | `PDFDocumentModel`               | Modelo ORM de la tabla `pdf_documents`                        |
+| `database/repositories.py` | `SQLAlchemyEnterpriseRepository` | Implementacion concreta de EnterpriseRepository               |
+| `database/repositories.py` | `SQLAlchemyUserRepository`       | Implementacion concreta de UserRepository                     |
+| `database/repositories.py` | `SQLAlchemyPDFRepository`        | Implementacion concreta de PDFRepository                      |
+| `security/jwt_provider.py` | `JoseJWTTokenProvider`           | Implementacion de TokenProvider con python-jose               |
+| `security/password.py`     | `BcryptPasswordHasher`           | Implementacion de PasswordHasher con pbkdf2_sha256            |
+| `storage/local_storage.py` | `LocalDiskStorage`               | Implementacion de FileStorage (disco local, UUID como nombre) |
+| `storage/validators.py`    | `PDFFileValidator`               | Valida extension .pdf, MIME application/pdf, cabecera %PDF    |
+| `storage/validators.py`    | `UnsupportedFileValidator`       | Rechaza formatos no soportados                                |
+| `storage/validators.py`    | `SimpleFileValidatorFactory`     | Fabrica que retorna el validador correcto segun el archivo    |
 
 ### Capa de Interfaces (`interfaces/`)
 
-| Archivo | Clase/Funcion | Descripcion |
-|---------|---------------|-------------|
-| `dependencies.py` | `get_user_repo()` | Inyecta SQLAlchemyUserRepository |
-| `dependencies.py` | `get_enterprise_repo()` | Inyecta SQLAlchemyEnterpriseRepository |
-| `dependencies.py` | `get_pdf_repo()` | Inyecta SQLAlchemyPDFRepository |
-| `dependencies.py` | `get_password_hasher()` | Inyecta BcryptPasswordHasher |
-| `dependencies.py` | `get_token_provider()` | Inyecta JoseJWTTokenProvider |
-| `dependencies.py` | `get_storage()` | Inyecta LocalDiskStorage |
-| `dependencies.py` | `get_validator_factory()` | Inyecta SimpleFileValidatorFactory |
-| `dependencies.py` | `get_register_user_use_case()` | Compone el caso de uso RegisterUser |
-| `dependencies.py` | `get_login_user_use_case()` | Compone el caso de uso LoginUser |
-| `dependencies.py` | `get_upload_pdf_use_case()` | Compone el caso de uso ValidateAndUploadPDF |
-| `dependencies.py` | `get_current_user()` | Extrae y valida el usuario del token JWT |
-| `schemas/auth.py` | `CedulaStr` | Tipo Pydantic: regex `^[0-9]{6,12}$` |
-| `schemas/auth.py` | `NitStr` | Tipo Pydantic: regex `^[0-9]{9,15}(-[0-9])?$` |
-| `schemas/auth.py` | `RegisterRequest` | Schema de registro |
-| `schemas/auth.py` | `LoginRequest` | Schema de login |
-| `schemas/auth.py` | `AuthResponse` | Schema de respuesta de auth (token + datos) |
-| `schemas/auth.py` | `UserResponse` | Schema de respuesta de usuario |
-| `schemas/pdf.py` | `PDFUploadResponse` | Schema de respuesta de subida de PDF |
-| `api_v1/router.py` | `api_router` | Router agregador |
-| `api_v1/auth_routes.py` | `register()` | Endpoint POST /auth/register |
-| `api_v1/auth_routes.py` | `login()` | Endpoint POST /auth/login |
-| `api_v1/auth_routes.py` | `me()` | Endpoint GET /auth/me |
-| `api_v1/pdf_routes.py` | `upload_pdf()` | Endpoint POST /documents/upload-pdf |
+| Archivo                 | Clase/Funcion                  | Descripcion                                   |
+| ----------------------- | ------------------------------ | --------------------------------------------- |
+| `dependencies.py`       | `get_user_repo()`              | Inyecta SQLAlchemyUserRepository              |
+| `dependencies.py`       | `get_enterprise_repo()`        | Inyecta SQLAlchemyEnterpriseRepository        |
+| `dependencies.py`       | `get_pdf_repo()`               | Inyecta SQLAlchemyPDFRepository               |
+| `dependencies.py`       | `get_password_hasher()`        | Inyecta BcryptPasswordHasher                  |
+| `dependencies.py`       | `get_token_provider()`         | Inyecta JoseJWTTokenProvider                  |
+| `dependencies.py`       | `get_storage()`                | Inyecta LocalDiskStorage                      |
+| `dependencies.py`       | `get_validator_factory()`      | Inyecta SimpleFileValidatorFactory            |
+| `dependencies.py`       | `get_register_user_use_case()` | Compone el caso de uso RegisterUser           |
+| `dependencies.py`       | `get_login_user_use_case()`    | Compone el caso de uso LoginUser              |
+| `dependencies.py`       | `get_upload_pdf_use_case()`    | Compone el caso de uso ValidateAndUploadPDF   |
+| `dependencies.py`       | `get_current_user()`           | Extrae y valida el usuario del token JWT      |
+| `schemas/auth.py`       | `CedulaStr`                    | Tipo Pydantic: regex `^[0-9]{6,12}$`          |
+| `schemas/auth.py`       | `NitStr`                       | Tipo Pydantic: regex `^[0-9]{9,15}(-[0-9])?$` |
+| `schemas/auth.py`       | `RegisterRequest`              | Schema de registro                            |
+| `schemas/auth.py`       | `LoginRequest`                 | Schema de login                               |
+| `schemas/auth.py`       | `AuthResponse`                 | Schema de respuesta de auth (token + datos)   |
+| `schemas/auth.py`       | `UserResponse`                 | Schema de respuesta de usuario                |
+| `schemas/pdf.py`        | `PDFUploadResponse`            | Schema de respuesta de subida de PDF          |
+| `api_v1/router.py`      | `api_router`                   | Router agregador                              |
+| `api_v1/auth_routes.py` | `register()`                   | Endpoint POST /auth/register                  |
+| `api_v1/auth_routes.py` | `login()`                      | Endpoint POST /auth/login                     |
+| `api_v1/auth_routes.py` | `me()`                         | Endpoint GET /auth/me                         |
+| `api_v1/pdf_routes.py`  | `upload_pdf()`                 | Endpoint POST /documents/upload-pdf           |
 
 ### Frontend
 
-| Archivo | Funcion/Componente | Descripcion |
-|---------|-------------------|-------------|
-| `api/axiosClient.js` | `axiosClient` | Instancia Axios con interceptor que agrega `Authorization: Bearer <token>` |
-| `api/authService.js` | `registerUser()` | POST /auth/register |
-| `api/authService.js` | `loginUser()` | POST /auth/login |
-| `api/authService.js` | `fetchProfile()` | GET /auth/me |
-| `api/pdfService.js` | `uploadPdf()` | POST /documents/upload-pdf (multipart/form-data) |
-| `context/AuthContext.jsx` | `AuthProvider` | Proveedor de contexto con token, user, signIn, signOut |
-| `context/AuthContext.jsx` | `useAuthContext()` | Hook para consumir el contexto de autenticacion |
-| `hooks/useAuthForm.js` | `useLoginForm()` | Hook de formulario de login con react-hook-form |
-| `hooks/useAuthForm.js` | `useRegisterForm()` | Hook de formulario de registro |
-| `hooks/useAuthForm.js` | `validations` | Reglas de validacion para cedula y NIT |
-| `hooks/useUpload.js` | `useUpload()` | Hook que maneja subida de PDF (validacion MIME, estados, errores) |
-| `pages/LoginPage.jsx` | `LoginPage` | Pagina de login con formulario de cedula + contraseña |
-| `pages/RegisterPage.jsx` | `RegisterPage` | Pagina de registro con datos personales y de empresa |
-| `pages/DashboardPage.jsx` | `DashboardPage` | Panel principal: info del usuario + formulario de subida de PDF |
-| `components/Button.jsx` | `Button` | Boton estilizado con Tailwind |
-| `components/Card.jsx` | `Card` | Tarjeta con titulo, subtitulo y contenido |
-| `components/Input.jsx` | `Input` | Input con label, validacion y mensaje de error |
-| `components/Layout.jsx` | `Layout` | Layout centrado responsivo |
-| `App.jsx` | `App` | Definicion de rutas: /, /login, /register, /dashboard |
-| `App.jsx` | `ProtectedRoute` | Componente que redirige a /login si no hay token |
+| Archivo                   | Funcion/Componente  | Descripcion                                                                |
+| ------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| `api/axiosClient.js`      | `axiosClient`       | Instancia Axios con interceptor que agrega `Authorization: Bearer <token>` |
+| `api/authService.js`      | `registerUser()`    | POST /auth/register                                                        |
+| `api/authService.js`      | `loginUser()`       | POST /auth/login                                                           |
+| `api/authService.js`      | `fetchProfile()`    | GET /auth/me                                                               |
+| `api/pdfService.js`       | `uploadPdf()`       | POST /documents/upload-pdf (multipart/form-data)                           |
+| `context/AuthContext.jsx` | `AuthProvider`      | Proveedor de contexto con token, user, signIn, signOut                     |
+| `context/AuthContext.jsx` | `useAuthContext()`  | Hook para consumir el contexto de autenticacion                            |
+| `hooks/useAuthForm.js`    | `useLoginForm()`    | Hook de formulario de login con react-hook-form                            |
+| `hooks/useAuthForm.js`    | `useRegisterForm()` | Hook de formulario de registro                                             |
+| `hooks/useAuthForm.js`    | `validations`       | Reglas de validacion para cedula y NIT                                     |
+| `hooks/useUpload.js`      | `useUpload()`       | Hook que maneja subida de PDF (validacion MIME, estados, errores)          |
+| `pages/LoginPage.jsx`     | `LoginPage`         | Pagina de login con formulario de cedula + contraseña                      |
+| `pages/RegisterPage.jsx`  | `RegisterPage`      | Pagina de registro con datos personales y de empresa                       |
+| `pages/DashboardPage.jsx` | `DashboardPage`     | Panel principal: info del usuario + formulario de subida de PDF            |
+| `components/Button.jsx`   | `Button`            | Boton estilizado con Tailwind                                              |
+| `components/Card.jsx`     | `Card`              | Tarjeta con titulo, subtitulo y contenido                                  |
+| `components/Input.jsx`    | `Input`             | Input con label, validacion y mensaje de error                             |
+| `components/Layout.jsx`   | `Layout`            | Layout centrado responsivo                                                 |
+| `App.jsx`                 | `App`               | Definicion de rutas: /, /login, /register, /dashboard                      |
+| `App.jsx`                 | `ProtectedRoute`    | Componente que redirige a /login si no hay token                           |
 
 ---
 
@@ -662,23 +664,23 @@ Respuesta `201 Created`:
 
 ## Dependencias del Backend
 
-| Paquete | Version | Proposito |
-|---------|---------|-----------|
-| `fastapi` | 0.116.1 | Framework web asincrono |
-| `uvicorn[standard]` | 0.34.0 | Servidor ASGI |
-| `sqlalchemy` | 2.0.39 | ORM para MySQL |
-| `pymysql` | 1.1.1 | Driver MySQL para Python |
-| `pypdf` | 5.3.0 | Extraccion de texto de PDFs (Capa 1) |
-| `pdfplumber` | 0.11.4 | Extraccion de texto avanzada (Capa 2) |
-| `pymupdf` | 1.26.4 | Renderizado de PDFs a imagenes + texto (Capas 3, 4, 5) |
-| `pytesseract` | 0.3.13 | Wrapper Python para Tesseract OCR (Capas 4, 5) |
-| `opencv-python-headless` | 4.12.0.88 | Preprocesamiento de imagenes para OCR |
-| `numpy` | 2.2.3 | Manipulacion de arrays de pixeles |
-| `Pillow` | 11.1.0 | Soporte de imagenes (dependencia de pytesseract) |
-| `python-jose[cryptography]` | 3.3.0 | Creacion y verificacion de tokens JWT |
-| `passlib[bcrypt]` | 1.7.4 | Hashing seguro de contraseñas |
-| `python-multipart` | 0.0.20 | Soporte para subida de archivos multipart |
-| `pydantic-settings` | 2.8.1 | Configuracion tipada con variables de entorno |
+| Paquete                     | Version   | Proposito                                              |
+| --------------------------- | --------- | ------------------------------------------------------ |
+| `fastapi`                   | 0.116.1   | Framework web asincrono                                |
+| `uvicorn[standard]`         | 0.34.0    | Servidor ASGI                                          |
+| `sqlalchemy`                | 2.0.39    | ORM para MySQL                                         |
+| `pymysql`                   | 1.1.1     | Driver MySQL para Python                               |
+| `pypdf`                     | 5.3.0     | Extraccion de texto de PDFs (Capa 1)                   |
+| `pdfplumber`                | 0.11.4    | Extraccion de texto avanzada (Capa 2)                  |
+| `pymupdf`                   | 1.26.4    | Renderizado de PDFs a imagenes + texto (Capas 3, 4, 5) |
+| `pytesseract`               | 0.3.13    | Wrapper Python para Tesseract OCR (Capas 4, 5)         |
+| `opencv-python-headless`    | 4.12.0.88 | Preprocesamiento de imagenes para OCR                  |
+| `numpy`                     | 2.2.3     | Manipulacion de arrays de pixeles                      |
+| `Pillow`                    | 11.1.0    | Soporte de imagenes (dependencia de pytesseract)       |
+| `python-jose[cryptography]` | 3.3.0     | Creacion y verificacion de tokens JWT                  |
+| `passlib[bcrypt]`           | 1.7.4     | Hashing seguro de contraseñas                          |
+| `python-multipart`          | 0.0.20    | Soporte para subida de archivos multipart              |
+| `pydantic-settings`         | 2.8.1     | Configuracion tipada con variables de entorno          |
 
 ---
 
@@ -699,4 +701,84 @@ Respuesta `201 Created`:
                                                              └──────────────────────────┘
 ```
 
-Las tablas se crean automaticamente al iniciar el servidor gracias a `Base.metadata.create_all(bind=engine)` en el evento `startup` de FastAPI.
+Las tablas se crean y actualizan mediante migraciones con Alembic (`alembic upgrade head`). El backend ejecuta las migraciones automaticamente al arrancar cuando corre en Docker.
+
+---
+
+## Ejecutar con Docker
+
+Para correr todo el proyecto (frontend, backend y MySQL) con Docker:
+
+### Requisitos
+
+- **Docker** y **Docker Compose** instalados
+
+### Levantar los servicios
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up -d
+```
+
+Esto levanta:
+
+| Servicio | Puerto | URL                   | Descripcion                        |
+| -------- | ------ | --------------------- | ---------------------------------- |
+| Frontend | 9090   | http://localhost:9090 | Aplicacion React servida por Nginx |
+| Backend  | 8000   | http://localhost:8000 | API FastAPI + docs en /docs        |
+| MySQL    | 3306   | localhost:3306        | Base de datos proyecto_senior      |
+
+### Usuario de prueba (seeder)
+
+Crear un usuario inicial con cédula `12345678` y contraseña `password123`:
+
+```bash
+docker compose exec backend python scripts/seed.py
+```
+
+### Comandos útiles
+
+```bash
+# Ver logs de todos los servicios
+docker compose logs -f
+
+# Ver logs solo del backend
+docker compose logs -f backend
+
+# Reconstruir tras cambios en el código
+docker compose build --no-cache
+docker compose up -d
+
+# Detener todo
+docker compose down
+
+# Detener y eliminar volúmenes (resetea la base de datos)
+docker compose down -v
+```
+
+### Variables de entorno (producción)
+
+Para usar una clave JWT segura en producción:
+
+```bash
+JWT_SECRET_KEY=tu-clave-secreta-segura docker compose up -d
+```
+
+O crea un archivo `.env` en la raíz del proyecto con:
+
+```env
+JWT_SECRET_KEY=tu-clave-secreta-segura
+```
+
+Cómo ejecutar el seeder
+Opción 1 – Docker (con el backend ya levantado):
+
+docker compose exec backend python scripts/seed.py
+Opción 2 – Local (Python + MySQL en local o en Docker):
+
+cd backend
+
+# Asegúrate de tener .env con DATABASE_URL correcta
+
+python scripts/seed.py
